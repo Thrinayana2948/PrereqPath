@@ -36,48 +36,83 @@ PrereqPath/
 
 ## Setup
 
+
 ### 1. Supabase database
+
 1. Create a Supabase project.
-2. Open **SQL Editor**, paste `backend/db/schema.sql`, and run it (safe to re-run).
-3. Copy the connection string from **Connect → Connection string** (use **Session pooler** or **Direct**).
+2. Open the SQL Editor and run `backend/db/schema.sql`.
+3. Copy your database connection string from **Connect → Connection string**. Use the Session Pooler or Direct connection, as supported by your network.
 
 ### 2. Backend
-```bash
+
+Open a terminal in the project root and run these commands on Windows:
+
+```powershell
 cd backend
 python -m venv .venv
-.venv\Scripts\activate          # macOS/Linux: source .venv/bin/activate
-pip install -r requirements.txt
-copy .env.example .env           # macOS/Linux: cp .env.example .env
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+Copy-Item .env.example .env
 ```
-Edit `backend/.env` and set `DATABASE_URL` (URL-encode special characters in the password). Then:
-```bash
-python -m db.manage migrate      # optional alternative to the SQL Editor
-python -m db.manage seed         # optional sample curriculum
+
+Open `backend/.env` and configure `DATABASE_URL`. If you intend to run PostgreSQL integration tests, also configure `TEST_DATABASE_URL`.
+
+Then start the backend:
+
+```powershell
+python -m db.manage migrate
+python -m db.manage seed
 uvicorn app.main:app --reload --port 8000
 ```
-API docs: http://localhost:8000/docs. If `DATABASE_URL` is missing, `/api/health` reports
-`not_configured` and data endpoints return **503** with setup instructions.
+
+The migration and seed commands are optional if you have already applied the schema and loaded the sample data. Run the seed command only when you want to load the demo curriculum.
+
+API documentation: http://localhost:8000/docs
+
+If the database is not configured, `/api/health` reports its status and data endpoints may return `503`.
 
 ### 3. Frontend
-```bash
+
+Open a second terminal from the project root:
+
+```powershell
 cd frontend
 npm install
-npm run dev                      # http://localhost:5173
+npm run dev
 ```
-Optional `frontend/.env`: `VITE_API_URL=http://localhost:8000`. The frontend never receives database credentials
-or Supabase keys — it only talks to the FastAPI backend.
 
-## Tests
-```bash
+Open the local URL printed by Vite, usually http://localhost:5173.
+
+Optional: create `frontend/.env` with:
+
+```dotenv
+VITE_API_URL=http://localhost:8000
+```
+
+The frontend communicates with the FastAPI backend; database credentials must remain on the backend.
+
+### 4. Tests
+
+From the project root, run the backend tests:
+
+```powershell
 cd backend
-.venv\Scripts\python -m pytest -v
+.venv\Scripts\Activate.ps1
+python -m pytest -v
 ```
-- `test_graph.py` — algorithm tests (no database).
-- `test_api.py` — validation / error-handling tests (no database) plus PostgreSQL integration tests that run only
-  when `TEST_DATABASE_URL` is set. They create a throwaway schema `prereqpath_test_xxxxxxxx`, run `schema.sql`
-  inside it, and drop it afterwards, so existing data is not touched. Use a session-pooler or direct connection.
 
-Frontend verification: `cd frontend && npm run build`.
+The graph tests run without a database. PostgreSQL integration tests run only when `TEST_DATABASE_URL` is configured.
+
+The integration tests create a temporary schema for isolation and clean it up afterwards.
+
+To verify the frontend build, open another terminal from the project root:
+
+```powershell
+cd frontend
+npm run build
+```
+
+
 
 ## API
 
